@@ -1,0 +1,51 @@
+name: gems-model-docker
+
+services:
+  gems:
+    image: gems-model:local
+    pull_policy: never
+    build:
+      context: .
+      additional_contexts:
+        gems: ..
+      args:
+        JULIA_IMAGE: ${JULIA_IMAGE:-julia:1.11.9-bookworm}
+    init: true
+    read_only: true
+    cpus: ${GEMS_CPUS:-8}
+    mem_limit: ${GEMS_MEMORY:-10g}
+    memswap_limit: ${GEMS_MEMORY:-10g}
+    environment:
+      JULIA_NUM_THREADS: ${GEMS_THREADS:-8}
+      GEMS_CONFIG: ${GEMS_CONFIG:-/opt/GEMS/data/DefaultConf.toml}
+      GEMS_POPULATION: ${GEMS_POPULATION:-}
+      GEMS_SETTINGS: ${GEMS_SETTINGS:-}
+      GEMS_POP_SIZE: ${GEMS_POP_SIZE:-}
+      GEMS_TICKS: ${GEMS_TICKS:-}
+      GEMS_SEED: ${GEMS_SEED:-42}
+      GEMS_CSV: ${GEMS_CSV:-true}
+      GEMS_REPORT: ${GEMS_REPORT:-false}
+      GEMS_RD_STYLE: ${GEMS_RD_STYLE:-}
+    volumes:
+      - type: bind
+        source: ./input
+        target: /input
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ./output
+        target: /output
+        bind:
+          create_host_path: false
+      - population-cache:/opt/GEMS/localdata
+      - julia-runtime-cache:/work/julia
+    tmpfs:
+      - /tmp:size=1g,mode=1777
+      - /work:size=128m,mode=1777
+      - /opt/GEMS/temp:size=512m,mode=1777
+    stop_grace_period: 30s
+
+volumes:
+  population-cache:
+  julia-runtime-cache:
